@@ -8,6 +8,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.gk.emon.allhealthappssummary.presentation.googleFit.GoogleFitScreen
 import com.gk.emon.allhealthappssummary.presentation.home.HomeScreen
 import kotlinx.coroutines.CoroutineScope
 
@@ -30,10 +31,10 @@ fun AppNavGraph(
         composable(
             AppNavigation.GOOGLE_FIT_SCREEN,
         ) {
-            HomeScreen()
+            GoogleFitScreen()
         }
         composable(AppNavigation.HOME_SCREEN) {
-            HomeScreen()
+            HomeScreen { navActions.navigateToGoogleFit() }
         }
     }
 }

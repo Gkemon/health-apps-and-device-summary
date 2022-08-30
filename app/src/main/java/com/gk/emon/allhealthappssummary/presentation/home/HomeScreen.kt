@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,7 +36,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel = hiltViewModel(),
+    onGoogleFitClick: () -> Unit
 ) {
     AppThemeTheme {
         Column(
@@ -45,13 +47,15 @@ fun HomeScreen(
                 .padding(10.dp)
         ) {
             Text(
-                text = "Please connect your app. For now only Google Fit and Huawei Health is available",
+                text =
+                stringResource(id = R.string.home_title),
                 fontSize = 15.sp,
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.fillMaxHeight(0.1f))
             AllAppList(
-                viewModel
+                viewModel,
+                onGoogleFitClick
             )
         }
     }
@@ -60,7 +64,8 @@ fun HomeScreen(
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
 fun AllAppList(
-    viewModel: HomeViewModel
+    viewModel: HomeViewModel,
+    onGoogleFitClick: () -> Unit
 ) {
 
     val context = LocalContext.current
@@ -68,7 +73,7 @@ fun AllAppList(
     val startForResult =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
             if (result.resultCode == Activity.RESULT_OK) {
-                viewModel.uiState.value.isGoogleFitConnected=true
+                viewModel.uiState.value.isGoogleFitConnected = true
             }
         }
 
@@ -81,7 +86,7 @@ fun AllAppList(
         isConnected = uiState.isGoogleFitConnected,
         onAppClick = {
             if (uiState.isGoogleFitConnected) {
-
+                onGoogleFitClick()
             } else {
                 val googleSignIn =
                     GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -130,7 +135,12 @@ fun AppListItem(name: String, icon: Int, onAppClick: () -> Unit, isConnected: Bo
                 true -> "✔ Connected"
                 false -> ""
             }
-            Text(text = result, fontSize = 15.sp, color = Color.Green, modifier = Modifier.padding(bottom = 10.dp))
+            Text(
+                text = result,
+                fontSize = 15.sp,
+                color = Color.Green,
+                modifier = Modifier.padding(bottom = 10.dp)
+            )
         }
     }
 

@@ -32,8 +32,3 @@ class HomeViewModel @Inject constructor(googleAccSignInCheck: CheckIsGoogleSignI
     lateinit var fitnessOptions: FitnessOptions
 
 }
-
-enum class FitActionRequestCode {
-    READ_DATA,
-    WRITE_DATA
-}

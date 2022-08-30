@@ -1,87 +1,83 @@
 package com.gk.emon.allhealthappssummary.data.remote
 
 import android.content.Context
-import com.gk.emon.allhealthappssummary.data.GoogleFitBaseDataSource
+import androidx.annotation.WorkerThread
+import com.gk.emon.allhealthappssummary.data.base.GoogleFitBaseDataSource
 import com.gk.emon.allhealthappssummary.utils.DateUtils
+import com.gk.emon.allhealthappssummary.utils.tryOffer
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.fitness.Fitness
 import com.google.android.gms.fitness.data.DataType
 import com.google.android.gms.fitness.request.DataReadRequest
-import kotlinx.coroutines.CoroutineScope
+import com.google.android.gms.fitness.result.DataReadResponse
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flowOn
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.coroutines.suspendCoroutine
 
 class GoogleFitRemoteDataSource @Inject constructor(
-    private val context: Context,
-    private val googleSignInAccount: GoogleSignInAccount
+    var context: Context,
+    var googleSignInAccount: GoogleSignInAccount
 ) :
-    GoogleFitBaseDataSource<DataReadRequest> {
+    GoogleFitBaseDataSource<DataReadResponse> {
+
 
     override suspend fun getHistoryResponse(
         startTime: Calendar,
         endTime: Calendar
-    ): Result<DataReadRequest> {
+    ): Result<DataReadResponse> {
         return suspendCoroutine {
+            context.let { it1 ->
+                Fitness
+                    .getHistoryClient(it1, googleSignInAccount)
+                    .readData(queryFitnessDataTodayToOneYearBack())
+                    .addOnSuccessListener {
+                        Result.success(it)
+                    }.addOnFailureListener {
+                        Result.failure<Exception>(it)
+                    }
+            }
+        }
+    }
+
+    @WorkerThread
+    override fun getHistoryResponseFlow(
+        startTime: Calendar,
+        endTime: Calendar
+    ): Flow<Result<DataReadResponse>> {
+        return (callbackFlow<Result<DataReadResponse>> {
             Fitness
                 .getHistoryClient(context, googleSignInAccount)
                 .readData(queryFitnessDataTodayToOneYearBack())
                 .addOnSuccessListener {
-                    it.toString()
-                    Result.success(it)
-                }.addOnFailureListener {
-                    it.toString()
-                    Result.failure<Exception>(it)
+                    tryOffer(Result.success(it))
                 }
-        }
-    }
+            awaitClose {}
+        }).flowOn(Dispatchers.IO)
 
-    override suspend fun getHistoryResponseFlow(
-        startTime: Calendar,
-        endTime: Calendar
-    ): Flow<Result<DataReadRequest>> {
-        return suspendCoroutine {
-            CoroutineScope(Dispatchers.IO).launch {
-                val result = getHistoryResponse(startTime, endTime)
-                val observableTasks = MutableStateFlow(result)
-                observableTasks.map { tasks ->
-                    if (tasks.isSuccess) {
-                        Result.success(tasks)
-                    } else {
-                        tasks.exceptionOrNull()?.let { it -> Result.failure(it) }
-                    }
-                }
-            }
-        }
     }
 
     private fun queryFitnessDataTodayToOneYearBack(): DataReadRequest {
         return DataReadRequest.Builder()
             /*Steps related data*/
             .aggregate(DataType.TYPE_STEP_COUNT_DELTA)
-            .aggregate(DataType.TYPE_STEP_COUNT_CADENCE)
-            .aggregate(DataType.TYPE_STEP_COUNT_CUMULATIVE)
             .aggregate(DataType.AGGREGATE_STEP_COUNT_DELTA)
             /*Steps related data*/
             /*Heart related data*/
-            .aggregate(DataType.AGGREGATE_HEART_POINTS)
-            .aggregate(DataType.AGGREGATE_HEART_RATE_SUMMARY)
             .aggregate(DataType.TYPE_HEART_RATE_BPM)
             .aggregate(DataType.TYPE_HEART_POINTS)
             /*Heart related data*/
             .bucketByTime(1, TimeUnit.DAYS)
             .setTimeRange(
-                Calendar.getInstance().timeInMillis,
                 DateUtils.getCalenderFromTodayToOneYearBack().timeInMillis,
+                Calendar.getInstance().timeInMillis,
                 TimeUnit.MILLISECONDS
             )
             .build()
     }
-
 }

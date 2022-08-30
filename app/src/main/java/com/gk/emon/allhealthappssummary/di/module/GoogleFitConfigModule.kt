@@ -1,18 +1,33 @@
 package com.gk.emon.allhealthappssummary.di.module
 
 import android.content.Context
+import com.gk.emon.allhealthappssummary.data.AppGoogleFitRepository
+import com.gk.emon.allhealthappssummary.data.base.GoogleFitBaseDataSource
+import com.gk.emon.allhealthappssummary.data.base.GoogleFitBaseRepository
+import com.gk.emon.allhealthappssummary.data.remote.GoogleFitRemoteDataSource
+import com.gk.emon.allhealthappssummary.di.IoDispatcher
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.fitness.FitnessOptions
 import com.google.android.gms.fitness.data.DataType
+import com.google.android.gms.fitness.result.DataReadResponse
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineDispatcher
+import javax.inject.Qualifier
+import javax.inject.Singleton
+
+
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class RemoteGoogleFitDataSource
 
 @Module
 @InstallIn(SingletonComponent::class)
-object GoogleFitModule {
+object GoogleFitConfigModule {
     @Provides
     fun provideGoogleFitnessOptions(): FitnessOptions {
         return FitnessOptions.builder()
@@ -36,6 +51,32 @@ object GoogleFitModule {
         @ApplicationContext context: Context,
         fitnessOptions: FitnessOptions
     ) = GoogleSignIn.getAccountForExtension(context, fitnessOptions)
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DataSourceModule {
+    @Provides
+    @Singleton
+    @RemoteGoogleFitDataSource
+    fun provideGoogleFitRemoteDataSource(
+        @ApplicationContext applicationContext: Context,
+        googleSignInAccount: GoogleSignInAccount
+    )
+            : GoogleFitBaseDataSource<DataReadResponse> =
+        GoogleFitRemoteDataSource(applicationContext, googleSignInAccount)
+}
 
 
+@Module
+@InstallIn(SingletonComponent::class)
+object RepositoryModule {
+    @Singleton
+    @Provides
+    fun provideGoogleFitRepository(
+        @RemoteGoogleFitDataSource remoteDataSource: GoogleFitBaseDataSource<DataReadResponse>,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher
+    ): GoogleFitBaseRepository<DataReadResponse> {
+        return AppGoogleFitRepository(remoteDataSource, ioDispatcher)
+    }
 }
