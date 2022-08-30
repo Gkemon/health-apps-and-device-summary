@@ -1,8 +1,5 @@
 package com.gk.emon.allhealthappssummary.presentation
 
-import androidx.compose.material.DrawerState
-import androidx.compose.material.DrawerValue
-import androidx.compose.material.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -33,10 +30,9 @@ fun AppNavGraph(
         composable(
             AppNavigation.GOOGLE_FIT_SCREEN,
         ) {
-
+            HomeScreen()
         }
         composable(AppNavigation.HOME_SCREEN) {
-
             HomeScreen()
         }
     }

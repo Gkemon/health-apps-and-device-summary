@@ -1,5 +1,9 @@
 package com.gk.emon.allhealthappssummary.presentation.home
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,7 +19,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -23,12 +29,14 @@ import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gk.emon.allhealthappssummary.R
 import com.gk.emon.allhealthappssummary.presentation.theme.AppThemeTheme
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-
     AppThemeTheme {
         Column(
             modifier = Modifier
@@ -38,8 +46,10 @@ fun HomeScreen(
         ) {
             Text(
                 text = "Please connect your app. For now only Google Fit and Huawei Health is available",
-                fontSize = 20.sp
+                fontSize = 15.sp,
+                textAlign = TextAlign.Center
             )
+            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
             AllAppList(
                 viewModel
             )
@@ -52,6 +62,16 @@ fun HomeScreen(
 fun AllAppList(
     viewModel: HomeViewModel
 ) {
+
+    val context = LocalContext.current
+
+    val startForResult =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                viewModel.uiState.value.isGoogleFitConnected=true
+            }
+        }
+
     Spacer(modifier = Modifier.fillMaxHeight(0.01f))
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -60,10 +80,16 @@ fun AllAppList(
         icon = R.drawable.ic_google_fit,
         isConnected = uiState.isGoogleFitConnected,
         onAppClick = {
-            handleGoogleFitClick(
-                uiState.isGoogleFitConnected,
-                viewModel
-            )
+            if (uiState.isGoogleFitConnected) {
+
+            } else {
+                val googleSignIn =
+                    GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .addExtension(viewModel.fitnessOptions)
+                        .build()
+                val intent = GoogleSignIn.getClient(context, googleSignIn)
+                startForResult.launch(intent.signInIntent)
+            }
         })
 }
 
@@ -96,17 +122,16 @@ fun AppListItem(name: String, icon: Int, onAppClick: () -> Unit, isConnected: Bo
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .requiredSize(50.dp)
-                        .padding(end = 10.dp)
+                        .padding(end = 10.dp, top = 10.dp)
                 )
                 Text(text = name, fontSize = 20.sp)
             }
             val result = when (isConnected) {
-                true -> "Connected"
+                true -> "✔ Connected"
                 false -> ""
             }
-            Text(text = result, fontSize = 10.sp, color = Color.Green)
+            Text(text = result, fontSize = 15.sp, color = Color.Green, modifier = Modifier.padding(bottom = 10.dp))
         }
-
     }
 
 }
@@ -120,23 +145,8 @@ fun AppListItem(name: String, icon: Int, onAppClick: () -> Unit, isConnected: Bo
 //    }
 
 
-private fun handleGoogleFitClick(
-    isConnected: Boolean,
-    viewModel: HomeViewModel
-) {
-    if (!isConnected) {
-        //
-    } else {
-//        requestCode.let {
-//            GoogleSignIn.requestPermissions(
-//                activity,
-//                requestCode.ordinal,
-//                getGoogleAccount,
-//                fitnessOptions
-//            )
-//        }
-    }
-}
+
+
 
 
 

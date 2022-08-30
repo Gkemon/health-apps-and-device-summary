@@ -11,16 +11,26 @@ import javax.inject.Inject
 
 
 data class HomeUiState(
-    val isGoogleFitConnected: Boolean = false,
+    var isGoogleFitConnected: Boolean = false,
     val isGoogleSignInSuccess: Boolean = false,
-    val isGoogleSignInFailed:Boolean = false,
+    val isGoogleSignInFailed: Boolean = false,
 )
 
 @HiltViewModel
-class HomeViewModel  @Inject constructor(googleAccSignInCheck: CheckIsGoogleSignInUseCase) : ViewModel() {
-    val uiState:StateFlow<HomeUiState> = MutableStateFlow(HomeUiState())
-    @Inject lateinit var  getGoogleAccount: GoogleSignInAccount
-    @Inject lateinit var  fitnessOptions: FitnessOptions
+class HomeViewModel @Inject constructor(googleAccSignInCheck: CheckIsGoogleSignInUseCase) :
+    ViewModel() {
+    val uiState: StateFlow<HomeUiState> = MutableStateFlow(
+        HomeUiState(
+            isGoogleFitConnected =
+            googleAccSignInCheck.isGoogleFitConnected()
+        )
+    )
+
+    @Inject
+    lateinit var getGoogleAccount: GoogleSignInAccount
+    @Inject
+    lateinit var fitnessOptions: FitnessOptions
+
 }
 
 enum class FitActionRequestCode {
