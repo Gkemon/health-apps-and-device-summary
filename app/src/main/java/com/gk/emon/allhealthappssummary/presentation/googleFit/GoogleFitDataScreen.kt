@@ -19,8 +19,10 @@ import com.gk.emon.allhealthappssummary.presentation.theme.AppThemeTheme
 import com.gk.emon.allhealthappssummary.utils.LoadingContent
 import com.gk.emon.allhealthappssummary.utils.getEndTimeString
 import com.gk.emon.allhealthappssummary.utils.getStartTimeString
+import com.gk.emon.allhealthappssummary.utils.parseBold
 import com.google.android.gms.fitness.data.DataSet
 import com.google.android.gms.fitness.result.DataReadResponse
+import java.util.*
 
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
@@ -30,21 +32,16 @@ fun GoogleFitScreen(
 ) {
     AppThemeTheme {
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-        Column(
+        DataContent(
+            loading = uiState.isLoading,
+            empty = uiState.isEmpty,
+            data = uiState.item,
+            onRefresh = { viewModel.refresh() },
             modifier = Modifier
+                .padding(all = 10.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(10.dp)
-        ) {
+        )
 
-            DataContent(
-                loading = uiState.isLoading,
-                empty = uiState.isEmpty,
-                data = uiState.item,
-                onRefresh = { viewModel.refresh() },
-                modifier = Modifier.padding(all = 10.dp)
-            )
-        }
     }
 }
 
@@ -75,6 +72,7 @@ private fun DataContent(
         Column(
             commonModifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         ) {
             if (!loading) {
                 Text(
@@ -86,6 +84,8 @@ private fun DataContent(
                 data?.let {
                     generateDataTotalItems(it)
                 }
+            } else {
+
             }
         }
     }
@@ -96,14 +96,24 @@ private fun DataContent(
 fun generateDataItem(result: DataSet): Collection<Unit> {
     val views = arrayListOf<Unit>()
     for (dp in result.dataPoints) {
-        var result = "Data point:" +
-                "\tType: ${dp.dataType.name}" +
-                "\tStart: ${dp.getStartTimeString()}" +
-                "\tEnd: ${dp.getEndTimeString()}"
+        var result =
+            "\n\n<b>${
+                dp.dataType.name
+                    .replace("com.google.", "")
+                    .replace(".delta", "")
+                    .replace(".summary", "")
+                    .replace("_", " ").uppercase(Locale.ENGLISH)
+                    .plus(
+                        if (dp.dataType.name.lowercase().contains("step"))
+                            " \uD83D\uDC63" else " ❤️"
+                    )
+            }</b>" +
+                    "\nStart: ${dp.getStartTimeString()}" +
+                    "\nEnd: ${dp.getEndTimeString()}"
         dp.dataType.fields.forEach {
-            result += "\tField: ${it.name} Value: ${dp.getValue(it)}"
+            result += "\n<b>${it.name} </b> -  ${dp.getValue(it)}"
         }
-        views.add(Text(text = result))
+        views.add(Text(text = result.parseBold()))
     }
     return views
 }
