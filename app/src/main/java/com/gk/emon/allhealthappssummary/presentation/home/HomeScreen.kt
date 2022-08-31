@@ -74,6 +74,7 @@ fun AllAppList(
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
             if (result.resultCode == Activity.RESULT_OK) {
                 viewModel.uiState.value.isGoogleFitConnected = true
+                onGoogleFitClick()
             }
         }
 
@@ -133,12 +134,12 @@ fun AppListItem(name: String, icon: Int, onAppClick: () -> Unit, isConnected: Bo
             }
             val result = when (isConnected) {
                 true -> "✔ Connected"
-                false -> ""
+                false -> "✘ Not connected"
             }
             Text(
                 text = result,
                 fontSize = 15.sp,
-                color = Color.Green,
+                color = if (isConnected) Color.Green else Color.Red,
                 modifier = Modifier.padding(bottom = 10.dp)
             )
         }
