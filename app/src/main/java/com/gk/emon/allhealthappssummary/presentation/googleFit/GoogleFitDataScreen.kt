@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -77,15 +78,13 @@ private fun DataContent(
             if (!loading) {
                 Text(
                     text = stringResource(id = R.string.google_fit_intro_title),
-                    fontSize = 15.sp,
-                    textAlign = TextAlign.Center
+                    fontSize = 20.sp,
+                    textAlign = TextAlign.Center, fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.padding(10.dp))
+                Spacer(modifier = Modifier.padding(5.dp))
                 data?.let {
                     generateDataTotalItems(it)
                 }
-            } else {
-
             }
         }
     }
