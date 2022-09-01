@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -56,9 +57,13 @@ class GoogleFitRemoteDataSource @Inject constructor(
                 .readData(queryFitnessDataTodayToOneYearBack())
                 .addOnSuccessListener {
                     tryOffer(Result.success(it))
+                }.addOnFailureListener{
+                    tryOffer(Result.failure(it))
                 }
             awaitClose {}
-        }).flowOn(Dispatchers.IO)
+        }).catch {
+            Result.failure<Throwable>(it)
+        }.flowOn(Dispatchers.IO)
 
     }
 

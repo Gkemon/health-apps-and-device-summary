@@ -58,7 +58,6 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     implementation 'com.google.android.gms:play-services-fitness:21.1.0'
     implementation 'com.google.android.gms:play-services-auth:20.2.0'
-    implementation 'com.google.android.gms:play-services-wearable:17.1.0'
 
     // Dagger
     kapt "com.google.dagger:hilt-compiler:2.42"
@@ -86,6 +85,8 @@ dependencies {
     implementation 'androidx.activity:activity-compose:1.5.1'
     implementation "com.google.accompanist:accompanist-appcompat-theme:$accompanistVersion"
     implementation "com.google.accompanist:accompanist-swiperefresh:$accompanistVersion"
+    implementation 'androidx.activity:activity-ktx:1.5.1'
+
 
 
 

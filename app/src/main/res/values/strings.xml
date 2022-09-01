@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">All Health Apps Summary</string>
-    <string name="no_data_found_for_google_fit">All Health Apps Summary</string>
+    <string name="no_data_found_for_google_fit">No google fit data found</string>
     <string name="google_fit_intro_title">Below you are seeing step and heart data from today
         to last year.</string>
-    <string name="home_title">Please connect your app. For now only Google Fit and Huawei Health is available</string>
+    <string name="home_app_title">Please connect your app. For now only Google Fit is available.</string>
+    <string name="home_device_title">Please see your paired devices and click to see data.</string>
 </resources>

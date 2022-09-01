@@ -1,6 +1,7 @@
 package com.gk.emon.allhealthappssummary.presentation.home
 
 import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -48,7 +49,7 @@ fun HomeScreen(
         ) {
             Text(
                 text =
-                stringResource(id = R.string.home_title),
+                stringResource(id = R.string.home_app_title),
                 fontSize = 15.sp,
                 textAlign = TextAlign.Center
             )
@@ -57,6 +58,14 @@ fun HomeScreen(
                 viewModel,
                 onGoogleFitClick
             )
+            Text(
+                text =
+                stringResource(id = R.string.home_device_title),
+                fontSize = 15.sp,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+
         }
     }
 }
@@ -96,6 +105,13 @@ fun AllAppList(
                 val intent = GoogleSignIn.getClient(context, googleSignIn)
                 startForResult.launch(intent.signInIntent)
             }
+        })
+    AppListItem(
+        name = "Google fit",
+        icon = R.drawable.ic_google_fit,
+        isConnected = uiState.isGoogleFitConnected,
+        onAppClick = {
+           viewModel.getPairDevicesUseCase.invoke(context as ComponentActivity)
         })
 }
 
@@ -146,15 +162,6 @@ fun AppListItem(name: String, icon: Int, onAppClick: () -> Unit, isConnected: Bo
     }
 
 }
-
-
-//private fun performActionForRequestCode(requestCode: FitActionRequestCode) =
-//    when (requestCode) {
-//        FitActionRequestCode.READ_DATA -> getFitnessData()
-//        FitActionRequestCode.WRITE_DATA -> {
-//        }
-//    }
-
 
 
 

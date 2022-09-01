@@ -1,6 +1,8 @@
 package com.gk.emon.allhealthappssummary.presentation.googleFit
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
@@ -29,15 +31,15 @@ import java.util.*
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
 fun GoogleFitScreen(
-    viewModel: GoogleFitDataViewModel = hiltViewModel()
+    googleFitDataViewModel: GoogleFitDataViewModel = hiltViewModel()
 ) {
     AppThemeTheme {
-        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        val uiState by googleFitDataViewModel.uiState.collectAsStateWithLifecycle()
         DataContent(
             loading = uiState.isLoading,
             empty = uiState.isEmpty,
-            data = uiState.item,
-            onRefresh = { viewModel.refresh() },
+            items= uiState.items,
+            onRefresh = { googleFitDataViewModel.refresh() },
             modifier = Modifier
                 .padding(all = 10.dp)
                 .fillMaxSize()
@@ -52,7 +54,7 @@ private fun DataContent(
     empty: Boolean,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
-    data: DataReadResponse?
+    items: List<String>
 ) {
     val commonModifier = modifier
         .fillMaxWidth()
@@ -66,7 +68,8 @@ private fun DataContent(
         emptyContent = {
             Text(
                 text = stringResource(id = R.string.no_data_found_for_google_fit),
-                modifier = commonModifier
+                modifier = commonModifier,
+                textAlign = TextAlign.Center, fontWeight = FontWeight.Bold
             )
         }
     ) {
@@ -82,8 +85,10 @@ private fun DataContent(
                     textAlign = TextAlign.Center, fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.padding(5.dp))
-                data?.let {
-                    generateDataTotalItems(it)
+                LazyColumn {
+                    items(items) { data ->
+                        Text(text = data.parseBold())
+                    }
                 }
             }
         }
@@ -118,7 +123,9 @@ fun generateDataItem(result: DataSet): Collection<Unit> {
 }
 
 @Composable
-fun generateDataTotalItems(dataReadResult: DataReadResponse): ArrayList<Unit> {
+fun generateDataTotalItems(
+    dataReadResult: DataReadResponse
+): ArrayList<Unit> {
     val views = arrayListOf<Unit>()
     if (dataReadResult.buckets.isNotEmpty()) {
         for (bucket in dataReadResult.buckets) {

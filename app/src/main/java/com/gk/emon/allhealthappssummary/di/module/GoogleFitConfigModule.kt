@@ -63,14 +63,14 @@ object DataSourceModule {
         @ApplicationContext applicationContext: Context,
         googleSignInAccount: GoogleSignInAccount
     )
-            : GoogleFitBaseDataSource<DataReadResponse> =
+    : GoogleFitBaseDataSource<DataReadResponse> =
         GoogleFitRemoteDataSource(applicationContext, googleSignInAccount)
 }
 
 
 @Module
 @InstallIn(SingletonComponent::class)
-object RepositoryModule {
+object GoogleFitRepositoryModule {
     @Singleton
     @Provides
     fun provideGoogleFitRepository(
