@@ -21,7 +21,7 @@ import javax.inject.Inject
 data class GoogleFitDataState(
     var isLoading: Boolean = false,
     val items: List<String> = emptyList(),
-    var isEmpty: Boolean = items.isEmpty(),
+    var isEmpty: Boolean = false,
 )
 
 @HiltViewModel
