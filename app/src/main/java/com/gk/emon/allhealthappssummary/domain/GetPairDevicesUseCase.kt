@@ -12,7 +12,7 @@ class GetPairDevicesUseCase @Inject constructor(
     private val bluetoothRepository: BluetoothBaseRepository,
 ) :
     FlowUseCase<ComponentActivity, List<BluetoothDevice>>(Dispatchers.Default) {
-    override fun execute(parameters: ComponentActivity): Flow<Result<List<BluetoothDevice>>> {
+    public override fun execute(parameters: ComponentActivity): Flow<Result<List<BluetoothDevice>>> {
         return bluetoothRepository.getPairedDevices(ComponentActivity() )
     }
 }

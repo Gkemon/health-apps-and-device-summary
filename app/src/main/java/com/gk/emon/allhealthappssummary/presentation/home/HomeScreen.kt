@@ -1,15 +1,22 @@
 package com.gk.emon.allhealthappssummary.presentation.home
 
 import android.app.Activity
+import android.bluetooth.BluetoothAdapter
+import android.content.Intent
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -31,10 +38,18 @@ import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gk.emon.allhealthappssummary.R
 import com.gk.emon.allhealthappssummary.presentation.theme.AppThemeTheme
+import com.gk.emon.allhealthappssummary.utils.permissionsBL
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
@@ -47,49 +62,52 @@ fun HomeScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(10.dp)
         ) {
-            Text(
-                text =
-                stringResource(id = R.string.home_app_title),
-                fontSize = 15.sp,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-            AllAppList(
+            Content(
                 viewModel,
                 onGoogleFitClick
             )
-            Text(
-                text =
-                stringResource(id = R.string.home_device_title),
-                fontSize = 15.sp,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-
         }
     }
 }
 
-@OptIn(ExperimentalLifecycleComposeApi::class)
+@RequiresApi(Build.VERSION_CODES.S)
+@OptIn(
+    ExperimentalLifecycleComposeApi::class, ExperimentalPermissionsApi::class,
+    DelicateCoroutinesApi::class
+)
 @Composable
-fun AllAppList(
+fun Content(
     viewModel: HomeViewModel,
     onGoogleFitClick: () -> Unit
 ) {
 
     val context = LocalContext.current
-
-    val startForResult =
-        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                viewModel.uiState.value.isGoogleFitConnected = true
-                onGoogleFitClick()
+    val startForResult = managedActivityResultLauncher(viewModel, onGoogleFitClick)
+    val bluetoothPermission = rememberMultiplePermissionsState(
+        permissionsBL.toList()
+    )
+    val scan =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult())
+        { result: ActivityResult ->
+            if (result.resultCode == AppCompatActivity.RESULT_OK && result.data != null) {
+                GlobalScope.launch(Dispatchers.Main) {
+                    viewModel.fetchPairedDevices(context as ComponentActivity)
+                }
+            } else {
+                viewModel.uiState.value.errorMsg = "No permission given for bluetooth"
             }
         }
-
-    Spacer(modifier = Modifier.fillMaxHeight(0.01f))
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+
+    Text(
+        text =
+        stringResource(id = R.string.home_app_title),
+        fontSize = 15.sp,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(modifier = Modifier.fillMaxHeight(0.01f))
     AppListItem(
         name = "Google fit",
         icon = R.drawable.ic_google_fit,
@@ -106,14 +124,64 @@ fun AllAppList(
                 startForResult.launch(intent.signInIntent)
             }
         })
-    AppListItem(
-        name = "Google fit",
-        icon = R.drawable.ic_google_fit,
-        isConnected = uiState.isGoogleFitConnected,
-        onAppClick = {
-           viewModel.getPairDevicesUseCase.invoke(context as ComponentActivity)
-        })
+    Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+    Button(
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = Color.White,
+        ),
+        modifier = Modifier
+            .shadow(
+                10.dp,
+                RectangleShape
+            )
+            .padding(10.dp)
+            .fillMaxWidth(),
+        onClick = {
+            if (bluetoothPermission.allPermissionsGranted) {
+                if (viewModel.bluetoothAdapter.isEnabled) {
+                    GlobalScope.launch(Dispatchers.Main) {
+                        viewModel.fetchPairedDevices(context as ComponentActivity)
+                    }
+                } else {
+                    val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                    scan.launch(enableBtIntent)
+                }
+            } else {
+                bluetoothPermission.launchMultiplePermissionRequest()
+            }
+
+        }) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                painterResource(R.drawable.ic_bluetooth),
+                contentDescription = "",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .requiredSize(50.dp)
+                    .padding(end = 10.dp, top = 10.dp)
+            )
+            Text(
+                text =
+                stringResource(id = R.string.home_device_title),
+                fontSize = 15.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+
+    }
 }
+
+@Composable
+private fun managedActivityResultLauncher(
+    viewModel: HomeViewModel,
+    onGoogleFitClick: () -> Unit
+) =
+    rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewModel.uiState.value.isGoogleFitConnected = true
+            onGoogleFitClick()
+        }
+    }
 
 @Composable
 fun AppListItem(name: String, icon: Int, onAppClick: () -> Unit, isConnected: Boolean = false) {
