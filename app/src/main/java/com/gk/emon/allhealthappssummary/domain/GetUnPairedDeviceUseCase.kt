@@ -12,7 +12,7 @@ class GetUnPairedDeviceUseCase @Inject constructor(
     private val bluetoothRepository: BluetoothBaseRepository,
 ) :
     FlowUseCase<ComponentActivity, BluetoothDevice>(Dispatchers.Default) {
-    override fun execute(parameters: ComponentActivity): Flow<Result<BluetoothDevice>> {
+    public override fun execute(parameters: ComponentActivity): Flow<Result<BluetoothDevice>> {
         return bluetoothRepository.getUnpairDevice(parameters)
     }
 }

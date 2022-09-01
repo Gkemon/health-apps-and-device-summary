@@ -1,28 +1,20 @@
 package com.gk.emon.allhealthappssummary.data.local
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.ComponentActivity
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import com.gk.emon.allhealthappssummary.data.base.BluetoothBaseDataSource
 import com.gk.emon.allhealthappssummary.utils.parcelable
 import com.gk.emon.allhealthappssummary.utils.tryOffer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
@@ -35,42 +27,20 @@ class BluetoothLocalDataSource @Inject constructor(
 ) :
     BluetoothBaseDataSource {
 
-    @RequiresApi(Build.VERSION_CODES.S)
     @SuppressLint("MissingPermission")
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun getPairedDevices(activity: ComponentActivity): Flow<Result<List<BluetoothDevice>>> {
         return (callbackFlow<Result<List<BluetoothDevice>>> {
-            while (true) {
-                if (isBluetoothActive(activity)) {
-                    bluetoothAdapter.startDiscovery()
-                    delay(refreshIntervalMs)
-                    tryOffer(Result.success(bluetoothAdapter.bondedDevices.toList()))
-                    delay(refreshIntervalMs)
-                } else {
-                    val scan =
-                        activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult())
-                        { result: ActivityResult ->
-                            if (result.resultCode == AppCompatActivity.RESULT_OK && result.data != null) {
-                                tryOffer(Result.success(bluetoothAdapter.bondedDevices.toList()))
-                            } else {
-                                tryOffer(Result.failure(Exception("No permission given for bluetooth")))
-                            }
-                        }
-                    val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                    scan.launch(enableBtIntent)
-                }
-                awaitClose { }
+            bluetoothAdapter.startDiscovery()
+            tryOffer(Result.success(bluetoothAdapter.bondedDevices.toList()))
+            awaitClose {
+                bluetoothAdapter.cancelDiscovery()
             }
         }).catch {
-            Result.failure<Throwable>(it)
-        }.flowOn(Dispatchers.Main)
+            emit(Result.failure(it))
+        }.flowOn(Dispatchers.IO)
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
-    private fun isBluetoothActive(activity: Activity) = (ActivityCompat.checkSelfPermission(
-        activity,
-        Manifest.permission.BLUETOOTH_CONNECT
-    ) == PackageManager.PERMISSION_GRANTED
-            && bluetoothAdapter.isEnabled)
 
     override fun getUnpairDevice(activity: ComponentActivity): Flow<Result<BluetoothDevice>> {
         return (callbackFlow<Result<BluetoothDevice>> {
@@ -94,7 +64,7 @@ class BluetoothLocalDataSource @Inject constructor(
                 activity.unregisterReceiver(receiver)
             }
         }).catch {
-            Result.failure<Throwable>(it)
+            emit(Result.failure(it))
         }.flowOn(Dispatchers.Main)
     }
 

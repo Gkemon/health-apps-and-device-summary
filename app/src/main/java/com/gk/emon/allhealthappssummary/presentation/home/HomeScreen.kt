@@ -1,7 +1,9 @@
 package com.gk.emon.allhealthappssummary.presentation.home
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.os.Build
 import androidx.activity.ComponentActivity
@@ -11,10 +13,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
@@ -22,6 +25,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -30,6 +34,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,6 +43,7 @@ import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gk.emon.allhealthappssummary.R
 import com.gk.emon.allhealthappssummary.presentation.theme.AppThemeTheme
+import com.gk.emon.allhealthappssummary.utils.parseBold
 import com.gk.emon.allhealthappssummary.utils.permissionsBL
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -59,20 +65,23 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(10.dp)
+                .padding(10.dp), horizontalAlignment = CenterHorizontally
         ) {
             Content(
                 viewModel,
                 onGoogleFitClick
             )
         }
+
     }
 }
 
+
+@SuppressLint("MissingPermission")
 @RequiresApi(Build.VERSION_CODES.S)
 @OptIn(
-    ExperimentalLifecycleComposeApi::class, ExperimentalPermissionsApi::class,
+    ExperimentalLifecycleComposeApi::class,
+    ExperimentalPermissionsApi::class,
     DelicateCoroutinesApi::class
 )
 @Composable
@@ -124,7 +133,6 @@ fun Content(
                 startForResult.launch(intent.signInIntent)
             }
         })
-    Spacer(modifier = Modifier.fillMaxHeight(0.1f))
     Button(
         colors = ButtonDefaults.buttonColors(
             backgroundColor = Color.White,
@@ -135,12 +143,14 @@ fun Content(
                 RectangleShape
             )
             .padding(10.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .fillMaxHeight(0.1f),
         onClick = {
             if (bluetoothPermission.allPermissionsGranted) {
                 if (viewModel.bluetoothAdapter.isEnabled) {
                     GlobalScope.launch(Dispatchers.Main) {
                         viewModel.fetchPairedDevices(context as ComponentActivity)
+                        viewModel.fetchUnPairedDevices(context)
                     }
                 } else {
                     val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
@@ -151,7 +161,10 @@ fun Content(
             }
 
         }) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Image(
                 painterResource(R.drawable.ic_bluetooth),
                 contentDescription = "",
@@ -167,7 +180,68 @@ fun Content(
                 textAlign = TextAlign.Center
             )
         }
+    }
 
+    Text(
+        text = stringResource(id = R.string.paired_device),
+        Modifier.padding(10.dp),
+        fontWeight = FontWeight.Bold
+    )
+    Spacer(modifier = Modifier.fillMaxHeight(0.01f))
+    if (uiState.pairedDevices.isEmpty()) {
+        Text(text = "No device")
+    }
+    LazyColumn {
+        items(uiState.pairedDevices) { data ->
+            BluetoothDeviceItem(data)
+        }
+    }
+    Spacer(modifier = Modifier.fillMaxHeight(0.03f))
+    Text(
+        text = stringResource(id = R.string.un_paired_device),
+        Modifier.padding(10.dp),
+        fontWeight = FontWeight.Bold
+    )
+    Spacer(modifier = Modifier.fillMaxHeight(0.01f))
+    if (uiState.unPairedDevices.isEmpty()) {
+        Text(text = "No device")
+    }
+    LazyColumn {
+        items(uiState.unPairedDevices) { data ->
+            BluetoothDeviceItem(data)
+        }
+    }
+}
+
+@SuppressLint("MissingPermission")
+@Composable
+private fun BluetoothDeviceItem(data: BluetoothDevice) {
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.background(Color.LightGray)
+    ) {
+        Image(
+            painterResource(R.drawable.ic_bluetooth),
+            contentDescription = "",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .requiredSize(40.dp)
+                .padding(10.dp)
+        )
+        Text(
+            text = data.name.parseBold(),
+            fontSize = 15.sp,
+            modifier = Modifier.padding(end = 10.dp)
+        )
+        Button(
+            onClick = {}, modifier = Modifier.padding(end = 10.dp)
+        ) {
+            Text(
+                text = "Click to details",
+                fontSize = 10.sp,
+            )
+        }
     }
 }
 
@@ -199,7 +273,7 @@ fun AppListItem(name: String, icon: Int, onAppClick: () -> Unit, isConnected: Bo
             },
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Row(
@@ -228,7 +302,6 @@ fun AppListItem(name: String, icon: Int, onAppClick: () -> Unit, isConnected: Bo
             )
         }
     }
-
 }
 
 

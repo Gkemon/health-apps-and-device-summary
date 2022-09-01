@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gk.emon.allhealthappssummary.domain.CheckIsGoogleSignInUseCase
 import com.gk.emon.allhealthappssummary.domain.GetPairDevicesUseCase
+import com.gk.emon.allhealthappssummary.domain.GetUnPairedDeviceUseCase
 import com.gk.emon.allhealthappssummary.utils.Async
 import com.gk.emon.allhealthappssummary.utils.WhileUiSubscribed
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -20,8 +21,8 @@ data class HomeUiState(
     var isGoogleFitConnected: Boolean = false,
     val isGoogleSignInSuccess: Boolean = false,
     val isGoogleSignInFailed: Boolean = false,
-    val pairedDevices: List<BluetoothDevice> = emptyList(),
-    val upPairedDevices: List<BluetoothDevice> = emptyList(),
+    val pairedDevices: MutableList<BluetoothDevice> = mutableListOf(),
+    val unPairedDevices: MutableList<BluetoothDevice> = mutableListOf(),
     var errorMsg: String? = ""
 )
 
@@ -29,6 +30,7 @@ data class HomeUiState(
 class HomeViewModel @Inject constructor(
     googleAccSignInCheck: CheckIsGoogleSignInUseCase,
     private val getPairDevicesUseCase: GetPairDevicesUseCase,
+    private val getUnPairedDeviceUseCase: GetUnPairedDeviceUseCase
 ) :
     ViewModel() {
 
@@ -37,20 +39,21 @@ class HomeViewModel @Inject constructor(
             emptyList()
         )
     )
+    private var unPairedDevices = MutableStateFlow<Result<MutableList<BluetoothDevice>>>(
+        Result.success(
+            mutableListOf()
+        )
+    )
     val uiState: StateFlow<HomeUiState> = combine(
         googleAccSignInCheck.isGoogleFitConnected(),
-        pairedDevices
-    ) { isConnected, result ->
-        when (result.isSuccess) {
-            true -> HomeUiState(
-                isGoogleFitConnected = isConnected,
-                pairedDevices = result.getOrNull() ?: emptyList()
-            )
-            false -> HomeUiState(
-                isGoogleFitConnected = isConnected,
-                errorMsg = result.exceptionOrNull()?.localizedMessage ?: "Unknown error"
-            )
-        }
+        pairedDevices,
+        unPairedDevices
+    ) { isConnected, pairedDevices, unPairedDevices ->
+        HomeUiState(
+            isGoogleFitConnected = isConnected,
+            pairedDevices = pairedDevices.getOrNull()?.toMutableList() ?: mutableListOf(),
+            unPairedDevices = unPairedDevices.getOrNull()?.toMutableList() ?: mutableListOf(),
+        )
     }.catch {
         HomeUiState(errorMsg = it.localizedMessage)
     }
@@ -76,16 +79,48 @@ class HomeViewModel @Inject constructor(
                 Async.Success(it)
             }
             .onStart<Async<Result<List<BluetoothDevice>>>> { emit(Async.Loading) }
-            .map { data -> produceUiState(data) }
+            .map { data -> producePairedDeviceUiState(data) }
             .stateIn(
                 scope = viewModelScope,
                 started = WhileUiSubscribed,
-                initialValue = HomeUiState(pairedDevices = emptyList())
+                initialValue = HomeUiState(pairedDevices = mutableListOf())
             ).collect()
-
     }
 
-    private suspend fun produceUiState(dataLoad: Async<Result<List<BluetoothDevice>>>) {
+    suspend fun fetchUnPairedDevices(activity: ComponentActivity) {
+        getUnPairedDeviceUseCase.execute(activity)
+            .map {
+                Async.Success(it)
+            }
+            .onStart<Async<Result<BluetoothDevice>>> { emit(Async.Loading) }
+            .map { data -> produceUnpairedDeviceUiState(data) }
+            .stateIn(
+                scope = viewModelScope,
+                started = WhileUiSubscribed,
+                initialValue = HomeUiState(unPairedDevices = mutableListOf())
+            ).collect()
+    }
+
+    private suspend fun produceUnpairedDeviceUiState(dataLoad: Async<Result<BluetoothDevice>>) {
+        if (dataLoad is Async.Success) {
+            when (dataLoad.data.isSuccess) {
+                true -> {
+                    val result = unPairedDevices.value.getOrNull() ?: mutableListOf()
+                    dataLoad.data.getOrNull()?.let {
+                        result.add(it)
+                        unPairedDevices.emit(Result.success(result))
+                    }
+                }
+                false -> unPairedDevices.emit(
+                    Result.failure(
+                        dataLoad.data.exceptionOrNull() ?: Throwable("Unknown error")
+                    )
+                )
+            }
+        }
+    }
+
+    private suspend fun producePairedDeviceUiState(dataLoad: Async<Result<List<BluetoothDevice>>>) {
         if (dataLoad is Async.Success) {
             when (dataLoad.data.isSuccess) {
                 true -> {

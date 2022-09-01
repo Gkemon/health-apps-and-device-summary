@@ -5,4 +5,6 @@
         to last year.</string>
     <string name="home_app_title">Please connect your app. For now only Google Fit is available.</string>
     <string name="home_device_title">Please see your paired devices and click to see data.</string>
+    <string name="paired_device">---Paired Devices---</string>
+    <string name="un_paired_device">---Unpaired Devices---</string>
 </resources>
