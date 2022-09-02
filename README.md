@@ -3,7 +3,7 @@
 Integrated apps:
 1) Google fit. (Fully done and fetching users steps and heart data from Google fit API)
 2) Huawei Health. (Partially done and waiting for API key approval from Huawei Developer Console and it might 3-7 days)
-3) Samsung Health. (Not implemented as for now Samsung is stopping sharing all health data.Ref - (https://developer.samsung.com/health/android/data/guide/process.html)
+3) Samsung Health. (Not implemented as for now Samsung is stopping sharing all health data. Reference is [here](https://developer.samsung.com/health/android/data/guide/process.html). 
 4) Xiaomi MI fit. (Not implemented as it seems they don't share any API for getting health data)
 5) Garmin Connect. (Not implemented as to get their API and SDK is limited to companies and institutions and it also takes 3-7 days to get API key for a company or institution)
 
