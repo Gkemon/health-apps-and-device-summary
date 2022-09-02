@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">All Health Apps Summary</string>
+    <string name="app_name">All Health Apps &amp; Device Summary</string>
     <string name="no_data_found_for_google_fit">No google fit data found</string>
     <string name="google_fit_intro_title">Below you are seeing step and heart data from today
         to last year.</string>

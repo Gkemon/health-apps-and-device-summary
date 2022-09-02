@@ -6,6 +6,15 @@ plugins {
 }
 
 android {
+
+    signingConfigs {
+        debug {
+            storeFile file('../jks/keystore')
+            storePassword '121212'
+            keyAlias '121212'
+            keyPassword '121212'
+        }
+    }
     compileSdk 33
 
     defaultConfig {
@@ -45,6 +54,7 @@ android {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
     }
+
 }
 
 dependencies {
@@ -88,7 +98,7 @@ dependencies {
     implementation 'androidx.activity:activity-ktx:1.5.1'
 
     implementation 'com.google.accompanist:accompanist-permissions:0.24.13-rc'
-
+    implementation 'com.huawei.hms:health:6.6.0.300'
 
 
 

@@ -2,16 +2,20 @@ package com.gk.emon.allhealthappssummary.presentation.home
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gk.emon.allhealthappssummary.domain.CheckIsGoogleSignInUseCase
+import com.gk.emon.allhealthappssummary.domain.CheckIsHuaweiSignInUseCase
 import com.gk.emon.allhealthappssummary.domain.GetPairDevicesUseCase
 import com.gk.emon.allhealthappssummary.domain.GetUnPairedDeviceUseCase
 import com.gk.emon.allhealthappssummary.utils.Async
+import com.gk.emon.allhealthappssummary.utils.HuaweiScopes
 import com.gk.emon.allhealthappssummary.utils.WhileUiSubscribed
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.fitness.FitnessOptions
+import com.huawei.hms.hihealth.SettingController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -19,9 +23,16 @@ import javax.inject.Inject
 
 
 data class HomeUiState(
+    //State data for Google Fit
     var isGoogleFitConnected: Boolean = false,
     val isGoogleSignInSuccess: Boolean = false,
     val isGoogleSignInFailed: Boolean = false,
+
+    //State data for Huawei Fit
+    var isHuaweiHealthConnected: Boolean = false,
+    val isHuaweiHealthInSuccess: Boolean = false,
+    val isHuaweiHealthFailed: Boolean = false,
+
     val pairedDevices: MutableList<BluetoothDevice> = mutableListOf(),
     val unPairedDevices: MutableList<BluetoothDevice> = mutableListOf(),
     var errorMsg: String? = ""
@@ -30,6 +41,7 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     googleAccSignInCheck: CheckIsGoogleSignInUseCase,
+    huaweiSignInUseCase: CheckIsHuaweiSignInUseCase,
     private val getPairDevicesUseCase: GetPairDevicesUseCase,
     private val getUnPairedDeviceUseCase: GetUnPairedDeviceUseCase
 ) :
@@ -46,15 +58,18 @@ class HomeViewModel @Inject constructor(
         )
     )
     private val isGoogleFitConnected = MutableStateFlow(googleAccSignInCheck.isGoogleFitConnected())
+    private val isHuaweiHealthConnected = huaweiSignInUseCase.isHuaweiSignInConnected()
 
 
     val uiState: StateFlow<HomeUiState> = combine(
         isGoogleFitConnected,
+        isHuaweiHealthConnected,
         pairedDevices,
-        unPairedDevices
-    ) { isConnected, pairedDevices, unPairedDevices ->
+        unPairedDevices,
+    ) { isGoogleFitConnected, isHuaweiHealthConnected, pairedDevices, unPairedDevices ->
         HomeUiState(
-            isGoogleFitConnected = isConnected,
+            isGoogleFitConnected = isGoogleFitConnected,
+            isHuaweiHealthConnected = isHuaweiHealthConnected.getOrNull() ?: false,
             pairedDevices = pairedDevices.getOrNull()?.toMutableList() ?: mutableListOf(),
             unPairedDevices = unPairedDevices.getOrNull()?.toMutableList() ?: mutableListOf(),
         )
@@ -76,6 +91,10 @@ class HomeViewModel @Inject constructor(
 
     @Inject
     lateinit var fitnessOptions: FitnessOptions
+
+    @Inject
+    lateinit var mSettingController: SettingController
+
 
     suspend fun fetchPairedDevices(activity: ComponentActivity) {
         getPairDevicesUseCase.execute(activity)
@@ -147,6 +166,17 @@ class HomeViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    fun huaweiSignIn(intent: Intent) {
+        val result = mSettingController.parseHealthKitAuthResultFromIntent(intent)
+        viewModelScope.launch {
+            isHuaweiHealthConnected.map { Result.success(result.isSuccess) }.collect()
+        }
+    }
+
+    fun getHuaweiIntent(): Intent {
+        return mSettingController.requestAuthorizationIntent(HuaweiScopes, true)
     }
 
 

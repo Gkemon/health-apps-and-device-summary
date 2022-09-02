@@ -53,13 +53,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
+
 const val TAG = "HomeScreen"
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
-fun HomeScreen(
+fun     HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onGoogleFitClick: () -> Unit
+    onGoogleFitClick: () -> Unit,
+    onHuaweiHiHealthClick: () -> Unit
 ) {
     AppThemeTheme {
         Column(
@@ -69,7 +71,8 @@ fun HomeScreen(
         ) {
             Content(
                 viewModel,
-                onGoogleFitClick
+                onGoogleFitClick,
+                onHuaweiHiHealthClick
             )
         }
 
@@ -87,11 +90,17 @@ fun HomeScreen(
 @Composable
 fun Content(
     viewModel: HomeViewModel,
-    onGoogleFitClick: () -> Unit
+    onGoogleFitClick: () -> Unit,
+    onHuaweiHiHealthClick: () -> Unit,
 ) {
 
     val context = LocalContext.current
-    val startForResult = managedActivityResultLauncher(viewModel, onGoogleFitClick)
+    val startGoogleFitForResult =
+        managedActivityResultLauncherGoogleFit(viewModel, onGoogleFitClick)
+    val startHuaweiHealthForResult =
+        managedActivityResultLauncherHuaweiHealth(viewModel, onHuaweiHiHealthClick)
+
+
     val bluetoothPermission = rememberMultiplePermissionsState(
         permissionsBL.toList()
     )
@@ -129,7 +138,18 @@ fun Content(
                         .addExtension(viewModel.fitnessOptions)
                         .build()
                 val intent = GoogleSignIn.getClient(context, googleSignIn)
-                startForResult.launch(intent.signInIntent)
+                startGoogleFitForResult.launch(intent.signInIntent)
+            }
+        })
+    AppListItem(
+        name = "Huawei Health",
+        icon = R.drawable.ic_huawei_health,
+        isConnected = uiState.isHuaweiHealthConnected,
+        onAppClick = {
+            if (uiState.isHuaweiHealthConnected) {
+                onHuaweiHiHealthClick()
+            } else {
+                startHuaweiHealthForResult.launch(viewModel.getHuaweiIntent())
             }
         })
     Button(
@@ -297,7 +317,7 @@ fun showBluetoothDeviceData(bluetoothDevice: BluetoothDevice, openDialog: Mutabl
 
 
 @Composable
-private fun managedActivityResultLauncher(
+private fun managedActivityResultLauncherGoogleFit(
     viewModel: HomeViewModel,
     onGoogleFitClick: () -> Unit
 ) =
@@ -305,6 +325,20 @@ private fun managedActivityResultLauncher(
         if (result.resultCode == Activity.RESULT_OK) {
             viewModel.setGoogleSignIn(true)
             onGoogleFitClick()
+        }
+    }
+
+@Composable
+private fun managedActivityResultLauncherHuaweiHealth(
+    viewModel: HomeViewModel,
+    onHuaweiHiHealthClick: () -> Unit
+) =
+    rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.let {
+                viewModel.huaweiSignIn(it)
+                //onHuaweiHiHealthClick()
+            }
         }
     }
 

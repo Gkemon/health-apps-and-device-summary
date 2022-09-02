@@ -34,7 +34,8 @@ fun AppNavGraph(
             GoogleFitScreen()
         }
         composable(AppNavigation.HOME_SCREEN) {
-            HomeScreen { navActions.navigateToGoogleFit() }
+            HomeScreen(onGoogleFitClick = { navActions.navigateToGoogleFit() },
+                onHuaweiHiHealthClick = { navActions.navigateToHuaweiFit() })
         }
     }
 }
