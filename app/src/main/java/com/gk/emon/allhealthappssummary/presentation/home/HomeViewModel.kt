@@ -35,17 +35,19 @@ class HomeViewModel @Inject constructor(
 ) :
     ViewModel() {
 
-    private var pairedDevices = MutableStateFlow<Result<List<BluetoothDevice>>>(
+    private val pairedDevices = MutableStateFlow<Result<List<BluetoothDevice>>>(
         Result.success(
             emptyList()
         )
     )
-    private var unPairedDevices = MutableStateFlow<Result<MutableList<BluetoothDevice>>>(
+    private val unPairedDevices = MutableStateFlow<Result<MutableList<BluetoothDevice>>>(
         Result.success(
             mutableListOf()
         )
     )
-    var isGoogleFitConnected = MutableStateFlow(googleAccSignInCheck.isGoogleFitConnected())
+    private val isGoogleFitConnected = MutableStateFlow(googleAccSignInCheck.isGoogleFitConnected())
+
+
     val uiState: StateFlow<HomeUiState> = combine(
         isGoogleFitConnected,
         pairedDevices,
@@ -107,6 +109,10 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             uiState.collect()
         }
+    }
+
+    fun setGoogleSignIn(isSignIn: Boolean = false) {
+        isGoogleFitConnected.value = isSignIn
     }
 
     private suspend fun produceUnpairedDeviceUiState(dataLoad: Async<Result<BluetoothDevice>>) {

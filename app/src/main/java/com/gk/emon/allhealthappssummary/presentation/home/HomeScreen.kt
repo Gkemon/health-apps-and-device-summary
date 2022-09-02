@@ -303,7 +303,7 @@ private fun managedActivityResultLauncher(
 ) =
     rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
         if (result.resultCode == Activity.RESULT_OK) {
-            viewModel.isGoogleFitConnected.value=true
+            viewModel.setGoogleSignIn(true)
             onGoogleFitClick()
         }
     }
