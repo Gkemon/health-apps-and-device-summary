@@ -1,7 +1,11 @@
 # All health app and device data summery
 
 ## Integrated apps:
-1) Google fit. (Fully done and fetching users steps and heart data from Google fit API)
+1) Google fit. (Fully done and fetching users steps and heart data from Google fit API But there is a note from [Google team](https://developers.google.com/fit/android)
+>Note: The Fit Android API has been deprecated as of May 11, 2022 and will be turned down at the end of 2024. See the Fit Android API to Health Connect migration guide for instructions on which API or platform to migrate to. For a comparison of Health Connect with the Fit Android and Fitbit Web APIs, see the Health Connect comparison guide. To learn more about Health Connect and integrate with the API, see the Health Connect documentation.
+
+As most of the devices and health apps are not adopting it right now and my region and device is not supporting Health Connect App so I can't implement it.
+
 2) Huawei Health. (Partially done and waiting for API key approval from Huawei Developer Console and it might 3-7 days)
 3) Samsung Health. (Not implemented as for now Samsung is stopping sharing all health data. Reference is [here](https://developer.samsung.com/health/android/data/guide/process.html) and it says 
 >We are currently going through an update to better support our partners. For that reason, we will not be accepting any applications for the Partner Apps Program at this time.
