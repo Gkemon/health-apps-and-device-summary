@@ -14,6 +14,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.fitness.FitnessOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
@@ -44,8 +45,9 @@ class HomeViewModel @Inject constructor(
             mutableListOf()
         )
     )
+    var isGoogleFitConnected = MutableStateFlow(googleAccSignInCheck.isGoogleFitConnected())
     val uiState: StateFlow<HomeUiState> = combine(
-        googleAccSignInCheck.isGoogleFitConnected(),
+        isGoogleFitConnected,
         pairedDevices,
         unPairedDevices
     ) { isConnected, pairedDevices, unPairedDevices ->
@@ -99,6 +101,12 @@ class HomeViewModel @Inject constructor(
                 started = WhileUiSubscribed,
                 initialValue = HomeUiState(unPairedDevices = mutableListOf())
             ).collect()
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            uiState.collect()
+        }
     }
 
     private suspend fun produceUnpairedDeviceUiState(dataLoad: Async<Result<BluetoothDevice>>) {

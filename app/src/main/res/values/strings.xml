@@ -7,4 +7,7 @@
     <string name="home_device_title">Please see your paired devices and click to see data.</string>
     <string name="paired_device">---Paired Devices---</string>
     <string name="un_paired_device">---Unpaired Devices---</string>
+    <string name="click_to_details">Click to details</string>
+    <string name="no_device">No device</string>
+    <string name="device_details">Device details</string>
 </resources>

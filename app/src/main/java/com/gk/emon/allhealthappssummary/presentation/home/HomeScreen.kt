@@ -4,9 +4,11 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,12 +20,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Card
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
@@ -46,6 +44,7 @@ import com.gk.emon.allhealthappssummary.presentation.theme.AppThemeTheme
 import com.gk.emon.allhealthappssummary.utils.parseBold
 import com.gk.emon.allhealthappssummary.utils.permissionsBL
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -54,6 +53,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
+const val TAG = "HomeScreen"
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
@@ -108,7 +108,6 @@ fun Content(
         }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-
     Text(
         text =
         stringResource(id = R.string.home_app_title),
@@ -146,20 +145,7 @@ fun Content(
             .fillMaxWidth()
             .fillMaxHeight(0.1f),
         onClick = {
-            if (bluetoothPermission.allPermissionsGranted) {
-                if (viewModel.bluetoothAdapter.isEnabled) {
-                    GlobalScope.launch(Dispatchers.Main) {
-                        viewModel.fetchPairedDevices(context as ComponentActivity)
-                        viewModel.fetchUnPairedDevices(context)
-                    }
-                } else {
-                    val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                    scan.launch(enableBtIntent)
-                }
-            } else {
-                bluetoothPermission.launchMultiplePermissionRequest()
-            }
-
+            handleBluetoothClick(bluetoothPermission, viewModel, context, scan)
         }) {
         Row(
             horizontalArrangement = Arrangement.Center,
@@ -181,7 +167,6 @@ fun Content(
             )
         }
     }
-
     Text(
         text = stringResource(id = R.string.paired_device),
         Modifier.padding(10.dp),
@@ -189,7 +174,7 @@ fun Content(
     )
     Spacer(modifier = Modifier.fillMaxHeight(0.01f))
     if (uiState.pairedDevices.isEmpty()) {
-        Text(text = "No device")
+        Text(text = stringResource(id = R.string.no_device))
     }
     LazyColumn {
         items(uiState.pairedDevices) { data ->
@@ -204,7 +189,7 @@ fun Content(
     )
     Spacer(modifier = Modifier.fillMaxHeight(0.01f))
     if (uiState.unPairedDevices.isEmpty()) {
-        Text(text = "No device")
+        Text(text = stringResource(id = R.string.no_device))
     }
     LazyColumn {
         items(uiState.unPairedDevices) { data ->
@@ -213,9 +198,33 @@ fun Content(
     }
 }
 
+@OptIn(ExperimentalPermissionsApi::class)
+private fun handleBluetoothClick(
+    bluetoothPermission: MultiplePermissionsState,
+    viewModel: HomeViewModel,
+    context: Context,
+    scan: ManagedActivityResultLauncher<Intent, ActivityResult>
+) {
+    if (bluetoothPermission.allPermissionsGranted) {
+        if (viewModel.bluetoothAdapter.isEnabled) {
+            GlobalScope.launch(Dispatchers.Main) {
+                viewModel.fetchPairedDevices(context as ComponentActivity)
+                viewModel.fetchUnPairedDevices(context)
+            }
+        } else {
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            scan.launch(enableBtIntent)
+        }
+    } else {
+        bluetoothPermission.launchMultiplePermissionRequest()
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.R)
 @SuppressLint("MissingPermission")
 @Composable
 private fun BluetoothDeviceItem(data: BluetoothDevice) {
+    val openDialog = remember { mutableStateOf(false) }
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
@@ -235,15 +244,57 @@ private fun BluetoothDeviceItem(data: BluetoothDevice) {
             modifier = Modifier.padding(end = 10.dp)
         )
         Button(
-            onClick = {}, modifier = Modifier.padding(end = 10.dp)
+            onClick = {
+                openDialog.value = true
+            }, modifier = Modifier.padding(end = 10.dp)
         ) {
             Text(
-                text = "Click to details",
+                text = stringResource(id = R.string.click_to_details),
                 fontSize = 10.sp,
             )
         }
     }
+    showBluetoothDeviceData(bluetoothDevice = data, openDialog)
+
 }
+
+@RequiresApi(Build.VERSION_CODES.R)
+@SuppressLint("MissingPermission")
+@Composable
+fun showBluetoothDeviceData(bluetoothDevice: BluetoothDevice, openDialog: MutableState<Boolean>) {
+    AppThemeTheme {
+        Column {
+            if (openDialog.value) {
+                AlertDialog(
+                    onDismissRequest = {
+                        openDialog.value = false
+                    },
+                    title = {
+                        Text(text = stringResource(id = R.string.device_details))
+                    },
+                    text = {
+                        Text(
+                            text = "Name: " + bluetoothDevice.name + "\n" +
+                                    "Address: " + bluetoothDevice.address + "\n" +
+                                    "Alias: " + bluetoothDevice.alias.toString()
+                        )
+                    },
+                    confirmButton = {
+                    },
+                    dismissButton = {
+                        Button(
+                            onClick = {
+                                openDialog.value = false
+                            }) {
+                            Text("Close")
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 private fun managedActivityResultLauncher(
@@ -252,7 +303,7 @@ private fun managedActivityResultLauncher(
 ) =
     rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
         if (result.resultCode == Activity.RESULT_OK) {
-            viewModel.uiState.value.isGoogleFitConnected = true
+            viewModel.isGoogleFitConnected.value=true
             onGoogleFitClick()
         }
     }
