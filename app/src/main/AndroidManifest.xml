@@ -23,9 +23,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AllHealthAppsSummary"
         tools:targetApi="31">
-        <meta-data
-            android:name="com.huawei.hms.client.appid"
-            android:value="*****"/>
+<!--        TODO: Uncomment it when get huawei api approval-->
+<!--        <meta-data-->
+<!--            android:name="com.huawei.hms.client.appid"-->
+<!--            android:value="*****"/>-->
         <activity
             android:name=".presentation.home.MainActivity"
             android:exported="true"
