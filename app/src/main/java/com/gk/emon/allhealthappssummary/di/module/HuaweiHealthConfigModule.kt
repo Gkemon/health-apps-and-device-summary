@@ -1,6 +1,7 @@
 package com.gk.emon.allhealthappssummary.di.module
 
 import android.content.Context
+import com.huawei.hms.hihealth.ActivityRecordsController
 import com.huawei.hms.hihealth.HuaweiHiHealth
 import com.huawei.hms.hihealth.SettingController
 import dagger.Module
@@ -23,4 +24,11 @@ object HuaweiHealthConfigModule {
     @Singleton
     fun provideHuaweiSettingController(@ApplicationContext context: Context): SettingController =
         HuaweiHiHealth.getSettingController(context)
+
+    @Provides
+    @Singleton
+    fun provideActivityRecordsController(@ApplicationContext context: Context): ActivityRecordsController =
+        HuaweiHiHealth.getActivityRecordsController(context)
 }
+
+

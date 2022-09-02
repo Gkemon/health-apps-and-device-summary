@@ -36,6 +36,7 @@ data class HomeUiState(
     val pairedDevices: MutableList<BluetoothDevice> = mutableListOf(),
     val unPairedDevices: MutableList<BluetoothDevice> = mutableListOf(),
     var errorMsg: String? = ""
+
 )
 
 @HiltViewModel

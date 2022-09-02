@@ -1,4 +1,4 @@
-package com.gk.emon.allhealthappssummary.presentation.googleFit
+package com.gk.emon.allhealthappssummary.presentation.huaweiHealth
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,16 +23,16 @@ import com.gk.emon.allhealthappssummary.utils.parseBold
 
 @OptIn(ExperimentalLifecycleComposeApi::class)
 @Composable
-fun GoogleFitScreen(
-    googleFitDataViewModel: GoogleFitDataViewModel = hiltViewModel()
+fun HuaweiScreen(
+    huaweiViewModel: HuaweiViewModel = hiltViewModel()
 ) {
     AppThemeTheme {
-        val uiState by googleFitDataViewModel.uiState.collectAsStateWithLifecycle()
+        val uiState by huaweiViewModel.uiState.collectAsStateWithLifecycle()
         DataContent(
             loading = uiState.isLoading,
             empty = uiState.isEmpty,
             items = uiState.items,
-            onRefresh = { googleFitDataViewModel.refresh() },
+            onRefresh = { huaweiViewModel.refresh() },
             modifier = Modifier
                 .padding(all = 10.dp)
                 .fillMaxSize()
@@ -72,7 +72,7 @@ private fun DataContent(
         ) {
             if (!loading) {
                 Text(
-                    text = stringResource(id = R.string.google_fit_intro_title),
+                    text = stringResource(id = R.string.huawei_intro_title),
                     fontSize = 20.sp,
                     textAlign = TextAlign.Center, fontWeight = FontWeight.Bold
                 )

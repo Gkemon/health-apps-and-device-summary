@@ -54,11 +54,9 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 
-const val TAG = "HomeScreen"
-
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
-fun     HomeScreen(
+fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onGoogleFitClick: () -> Unit,
     onHuaweiHiHealthClick: () -> Unit
@@ -337,7 +335,7 @@ private fun managedActivityResultLauncherHuaweiHealth(
         if (result.resultCode == Activity.RESULT_OK) {
             result.data?.let {
                 viewModel.huaweiSignIn(it)
-                //onHuaweiHiHealthClick()
+                onHuaweiHiHealthClick()
             }
         }
     }
