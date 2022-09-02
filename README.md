@@ -16,3 +16,20 @@
 <a href="health-apps-and-device-summary"><img alt="Maintained" src="https://github.com/Gkemon/health-apps-and-device-summary/blob/master/home-screen.jpeg" height="600"/></a>
 <a href="health-apps-and-device-summary"><img alt="Maintained" src="https://github.com/Gkemon/health-apps-and-device-summary/blob/master/details-screen.jpeg" height="600"/></a>
 </p>
+
+# Here is the video preview
+
+<div align="center">
+      <a href="https://www.youtube.com/shorts/Woo1q73tHio">
+     <img 
+      src="https://user-images.githubusercontent.com/22210002/188214530-14ceede9-58e2-4698-8970-f69b33802525.png" 
+      alt="Everything Is AWESOME" 
+      style="width:400px">
+      </a>
+</div>
+
+
+  
+
+
+
